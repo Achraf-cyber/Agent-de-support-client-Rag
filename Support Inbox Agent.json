@@ -1,0 +1,918 @@
+{
+  "name": "Support Inbox Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "dcdbc4ab-6a52-442d-81fd-5404a4b63fbf",
+              "name": "from",
+              "value": "google sheet",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        112,
+        528
+      ],
+      "id": "34fa6754-0cb0-43fc-9779-500364a955bb",
+      "name": "ExtractField"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        112,
+        720
+      ],
+      "id": "e5c29d09-291a-488f-abcc-bdb0b0e9d1f8",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "M05jmuN4et4fcBL2",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        336,
+        720
+      ],
+      "id": "b519f641-55bc-4d33-8bc3-442d122f31da",
+      "name": "ExtractFields"
+    },
+    {
+      "parameters": {
+        "inputText": "={{ $json.contentAsText }}\ndate of today : {{ $now }}",
+        "categories": {
+          "categories": [
+            {
+              "category": "simple question",
+              "description": "The use is just inquiring and want to know better about our services"
+            },
+            {
+              "category": "quote",
+              "description": "The use have a projet an want us to make it"
+            },
+            {
+              "category": "booking",
+              "description": "The user want to talk to a human and have said when he is available. And the user has given the exact time and place were he want to talk."
+            }
+          ]
+        },
+        "options": {
+          "systemPromptTemplate": "Please classify the text provided by the user into one of the following categories: simple question, quote and booking, and use the provided formatting instructions below. Don't explain, and only output the json. Also the default output is answer question. "
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.textClassifier",
+      "typeVersion": 1.1,
+      "position": [
+        560,
+        624
+      ],
+      "id": "05a59d93-3fd0-4449-bdda-cab65994e0d8",
+      "name": "Text Classifier"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.1-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        640,
+        880
+      ],
+      "id": "f4d2d490-a4cd-4d1a-b25e-fb2696659138",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "2Gvx4yXOapwjv6ki",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.contentAsText }}",
+        "options": {
+          "systemPromptTemplate": "You are an assistant for question-answering tasks. Use the following pieces of retrieved context to answer the question.\nIf you don't know the answer, just say that you don't know, don't try to make up an answer.\n----------------\nThe user is sending a question. Respond with the answer without adding another content. \nJust format the answer to the user in html form.\n{context}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainRetrievalQa",
+      "typeVersion": 1.7,
+      "position": [
+        944,
+        0
+      ],
+      "id": "a399cf4a-b945-477d-8c28-32d61b9a2aa6",
+      "name": "Question and Answer Chain"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1Kzx4EUwr7IM6S1XTyoFKtTLqI0aVqjyBkyjE7G4K5DY",
+          "mode": "list",
+          "cachedResultName": "hasil contacts",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Kzx4EUwr7IM6S1XTyoFKtTLqI0aVqjyBkyjE7G4K5DY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 240494396,
+          "mode": "list",
+          "cachedResultName": "Feuille 3",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Kzx4EUwr7IM6S1XTyoFKtTLqI0aVqjyBkyjE7G4K5DY/edit#gid=240494396"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        -112,
+        528
+      ],
+      "id": "f6ad4f0e-98ef-4575-a5f5-af49098ecf62",
+      "name": "UserContactThroughWebsite",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "69mXQXlsdc0324sf",
+          "name": "Google Sheets Trigger account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nfor (const item of $input.all()) {\n  item.json.contentAsText = JSON.stringify(item.json)\n}\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        336,
+        528
+      ],
+      "id": "29889647-4f24-4867-a676-f89c8b41d3e3",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        928,
+        240
+      ],
+      "id": "697d16a7-015a-4f3a-94b9-5f9217e069c1",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "2Gvx4yXOapwjv6ki",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.retrieverVectorStore",
+      "typeVersion": 1,
+      "position": [
+        1056,
+        240
+      ],
+      "id": "2da53dc3-8480-4917-a7bd-32abc053fcd9",
+      "name": "Vector Store Retriever"
+    },
+    {
+      "parameters": {
+        "memoryKey": {
+          "__rl": true,
+          "mode": "list",
+          "value": "vector_store_key"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
+      "typeVersion": 1.3,
+      "position": [
+        1056,
+        448
+      ],
+      "id": "7768d2ab-8aba-42c7-a73e-8bd7f1f80999",
+      "name": "Simple Vector Store"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1136,
+        656
+      ],
+      "id": "53dab1cb-d410-46f7-8783-3e191ee7d14e",
+      "name": "Embeddings Google Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "2Gvx4yXOapwjv6ki",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -112,
+        1360
+      ],
+      "id": "924d814a-f292-4746-8650-db357db0dd3c",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ce7c6d66-011c-404c-9e04-786dde7914ee",
+              "name": "hasil_tchad_description",
+              "value": "=HasilTchad est une agence qui developpe des sites webs et des applications mobile.  Hasil Tchad s'occupe de vous accompagné depuis l'idéation jusqu'à la mise sur le marché.  Notre équipe est constitué de developpeurs web, mobile et d'expert en cyber sécurité et intelligence artificial. Nous intégrons l'IA dans vos produits et nous nous assurons que vos produits sont sécuirisé.  Parmi nos produit il y a :  HasilFoot, une application qui permet de reserver des terrains au tchad",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        112,
+        1360
+      ],
+      "id": "35193e17-c3f0-4954-af46-b068cbde9a44",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "memoryKey": {
+          "__rl": true,
+          "mode": "list",
+          "value": "vector_store_key"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
+      "typeVersion": 1.3,
+      "position": [
+        336,
+        1360
+      ],
+      "id": "8548c2fb-bc26-4e9a-9b89-00cde5306568",
+      "name": "Simple Vector Store1"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        352,
+        1584
+      ],
+      "id": "6c60e82c-72eb-470b-8a06-7dbfd1e9872c",
+      "name": "Embeddings Google Gemini1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "2Gvx4yXOapwjv6ki",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "={{ $json.hasil_tchad_description }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        480,
+        1584
+      ],
+      "id": "b568e4d1-a4fa-43e4-a486-67f038e49f03",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('ExtractField').item.json.Email }}",
+        "subject": "Réponse à votre question",
+        "message": "={{ $json.response }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1408,
+        320
+      ],
+      "id": "e75412e1-4506-4a3d-9fb8-9165506c6910",
+      "name": "Send a message",
+      "webhookId": "bfe9f27f-2c7e-4581-ac2c-20386438fbbe",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "M05jmuN4et4fcBL2",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "4456c3c450580f99dbda90f5e83480f0d76f300e8ae9b869f337f18824e7734e@group.calendar.google.com",
+          "mode": "list",
+          "cachedResultName": "hasil tchad calendar"
+        },
+        "start": "={{  $json.item.date.plus(30, 'min') }}",
+        "useDefaultReminders": "={{ false }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        1440,
+        864
+      ],
+      "id": "d9212f70-83c8-4e4a-852b-4805d8f0f643",
+      "name": "Create an event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "L2n8unqQLS1gCI8t",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "text": "Extract the date and time which the user to book.\n",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "date",
+              "type": "date",
+              "description": "The date the user want to book in "
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        992,
+        928
+      ],
+      "id": "6d824e0d-1ab0-42ef-bd2f-1384d431fa58",
+      "name": "Information Extractor",
+      "alwaysOutputData": false,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        1072,
+        1152
+      ],
+      "id": "255796ec-2876-4d83-91ec-234747eb6ffb",
+      "name": "Google Gemini Chat Model2",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "2Gvx4yXOapwjv6ki",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Code in JavaScript').item.json.Email }}",
+        "subject": "Erreur dans la date de rendez-vous",
+        "message": "Vous avez fait une erreur dans la date de reservation. Veuillez demander une autre date",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1408,
+        1072
+      ],
+      "id": "1214f5cf-b3d9-463e-9589-08cc2feae1f8",
+      "name": "Send a message1",
+      "webhookId": "362b005d-13e5-4965-8bcc-6f3485263ef0",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "M05jmuN4et4fcBL2",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "app5pfFWdaaJ3okIN",
+          "mode": "list",
+          "cachedResultName": "hasil",
+          "cachedResultUrl": "https://airtable.com/app5pfFWdaaJ3okIN"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbl4i54v8NrODbC0k",
+          "mode": "list",
+          "cachedResultName": "Contact",
+          "cachedResultUrl": "https://airtable.com/app5pfFWdaaJ3okIN/tbl4i54v8NrODbC0k"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Prénom": "={{ $('ExtractField').item.json['prénom'] }}",
+            "Nom": "={{ $('ExtractField').item.json.Nom }}",
+            "Email": "={{ $('ExtractField').item.json.Email }}",
+            "Téléphone": "={{ $('ExtractField').item.json['Télephone'] }}",
+            "Entreprise": "={{ $('ExtractField').item.json.Entreprise }}",
+            "Type de besoin": "={{ $('ExtractField').item.json['Type de besoin'] }}",
+            "Budget": "={{ $('ExtractField').item.json.budget }}",
+            "Message": "={{ $('ExtractField').item.json.Message }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Prénom",
+              "displayName": "Prénom",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Nom",
+              "displayName": "Nom",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Téléphone",
+              "displayName": "Téléphone",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Entreprise",
+              "displayName": "Entreprise",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Type de besoin",
+              "displayName": "Type de besoin",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Budget",
+              "displayName": "Budget",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Message",
+              "displayName": "Message",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Langue",
+              "displayName": "Langue",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Statut",
+              "displayName": "Statut",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Nouveau",
+                  "value": "Nouveau"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Reçu le",
+              "displayName": "Reçu le",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Dernière modification",
+              "displayName": "Dernière modification",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        960,
+        640
+      ],
+      "id": "eb6a66c3-8c9d-493a-8055-7b33c3ea5487",
+      "name": "Create a record",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "Lp6fdVD4u6STozU4",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "UserContactThroughWebsite": [
+      {
+        "json": {
+          "prénom": "",
+          "Nom": "",
+          "Email": "",
+          "Télephone": "",
+          "Entreprise": "",
+          "Type de besoin": "",
+          "budget": "",
+          "Message": "",
+          "Column 10": "",
+          "Column 11": ""
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "prénom": "Test",
+          "Nom": "Verif",
+          "Email": "test.verif@example.com",
+          "Télephone": "",
+          "Entreprise": "",
+          "Type de besoin": "",
+          "budget": "",
+          "Message": "Ceci est un test de vérification Airtable, à supprimer.",
+          "Column 10": "",
+          "Column 11": ""
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "ExtractFields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ExtractField": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ExtractFields": {
+      "main": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text Classifier": {
+      "main": [
+        [
+          {
+            "node": "Question and Answer Chain",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create a record",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Information Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "UserContactThroughWebsite": {
+      "main": [
+        [
+          {
+            "node": "ExtractField",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Question and Answer Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vector Store Retriever": {
+      "ai_retriever": [
+        [
+          {
+            "node": "Question and Answer Chain",
+            "type": "ai_retriever",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Vector Store": {
+      "ai_vectorStore": [
+        [
+          {
+            "node": "Vector Store Retriever",
+            "type": "ai_vectorStore",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Simple Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Simple Vector Store1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Simple Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Simple Vector Store1",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Question and Answer Chain": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Information Extractor": {
+      "main": [
+        [
+          {
+            "node": "Create an event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "7f78ec43-1dbd-44e5-8aa6-74cd84b0888c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a8f9f0cf9456d060c22f338e6d2575464dd39c5d4913155a2c1b7ded0b43528d"
+  },
+  "nodeGroups": [],
+  "id": "KO2EVOoi7rkBmuYv",
+  "tags": []
+}
